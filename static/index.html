@@ -1,0 +1,76 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="description" content="Machine Learning Drone Controller">
+		<meta name="author" content="falldeaf">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="icon" href="drone.png" type="image/x-icon" />
+
+		<!-- TensorFlow.js and COCO-SSD Object recog model -->
+		<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.9.0"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@1.1.0"></script>
+
+		<!-- Load ThreeJS and GLTF Loader. -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r125/three.min.js" integrity="sha512-XI02ivhfmEfnk8CEEnJ92ZS6hOqWoWMKF6pxF/tC/DXBVxDXgs2Kmlc9CHA0Aw2dX03nrr8vF54Z6Mqlkuabkw==" crossorigin="anonymous"></script>
+		<script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/loaders/GLTFLoader.js"></script>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
+		<link rel="stylesheet" href="/style.css">
+	</head>
+	
+	<body>
+
+		<h1>Machine Learning Drone Controller</h1>
+		<div id="contain">
+			<div id="telemetry"></div>
+
+			<div id="vid">
+				<video width="960" height="720" id="player" autoplay hidden></video>
+				<canvas width="960" height="720" id="canvas"></canvas>
+			</div>
+	
+			<div id="control">
+
+				<div id="battery">
+					<i id="bat_icon" class="fas fa-car-battery"></i>
+					<div id="battery_bg">
+						<div id="battery_level"></div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="button bigbutton" id="connect_button">connect <i class="fas fa-wifi"></i></div>
+				</div>
+
+				<div class="row">
+					<div class="active button smallbutton" id="keyboard_button"><i class="fas fa-keyboard"></i></div>
+					<div class="button smallbutton" id="gamepad_button"><i class="fas fa-gamepad"></i></div>
+					<div class="button smallbutton" id="sentinal_button"><i class="fas fa-eye"></i></div>
+				</div>
+
+				<div class="row">
+					<div class="button medbutton" id="takeoff_button">toff <i class="fas fa-level-up-alt"></i></div>
+					<div class="button medbutton" id="land_button">land <i class="fas fa-level-down-alt"></i></div>
+				</div>
+
+				<div class="row">
+					<div class="button bigbutton" id="emergency_button">EMER <i class="fas fa-exclamation-triangle"></i></div>
+					<div class="button smallbutton" id="stop_button"><i class="fas fa-stop-circle"></i></div>
+				</div>
+
+				<div class="clear"></div>
+
+				<div id="log"></div>
+			</div>
+		</div>
+
+		<script type="text/javascript" src="/scripts/jmuxer.min.js"></script>
+		<script type="text/javascript" src="keyboard.js"></script>
+		<script type="text/javascript" src="3d_drone.js"></script>
+		<script type="text/javascript" src="behavior.js"></script>
+		<script>
+		</script>
+	</body>
+</html>
+
+
