@@ -75,7 +75,7 @@ wifi.init({
 
 async function runCommand(comm) {
 	console.log(comm);
-	sendLog(`Saw ${comm.name} command`);
+	sendLog(`Saw ${comm.name} command with value ${comm.val}`);
 	switch(comm.name) {
 		case "takeoff":
 			await sdk.control.takeOff();

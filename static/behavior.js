@@ -1,10 +1,15 @@
 var connected = false;
 var props_on = false;
+var tof = 0;
 
 var battery = document.getElementById('battery_level');
 function setBattery(perc) {
 	battery.style.width = perc + '%';
 	battery.style.backgroundColor = 'rgb(' + pickHex([194,238,0], [255,127,154], perc/100).join(',') + ')';
+}
+
+function setTof(tof) {
+	console.log(tof);
 }
 
 var log = document.getElementById('log');
@@ -48,6 +53,8 @@ cocoSsd.load().then(model => {
 			ctx.moveTo(canvas.width/2+deadzone, 0);
 			ctx.lineTo(canvas.width/2+deadzone, canvas.height);
 			ctx.stroke();
+
+			ctx.setLineDash([]);
 		}
 
 		//ctx.clearRect(0, 0, c.width, c.height);
@@ -94,7 +101,6 @@ comms_ws.onopen = function(event){
 };
 
 comms_ws.onmessage = function(event){ 
-	console.log(event.data);
 	var message = JSON.parse(event.data);
 	if(message.tele) {
 		handleTelemetry(message.tele);
@@ -135,30 +141,32 @@ function handleTelemetry(tel) {
 	pitch = tel.pitch;
 	roll = tel.roll;
 	yaw = tel.yaw;
+	tof = tel.tof;
 	setBattery(tel.battery);
 }
 
 var keyboard_on = true;
 var gamepad_on = false;
 var sentinal_on = false;
+var current_speed = 2;
 setInterval(function(){ 
 	if(keyboard_on) {
 		if (pressed_keys.includes(16) && pressed_keys.includes(37)) {
-			comms_ws.send('{"type":"command", "name":"rotateleft", "val": "2"}');
+			comms_ws.send(`{"type":"command", "name":"rotateleft", "val": "${current_speed}"}`);
 		} else if (pressed_keys.includes(16) && pressed_keys.includes(39)) {
-			comms_ws.send('{"type":"command", "name":"rotateright", "val": "2"}');
+			comms_ws.send(`{"type":"command", "name":"rotateright", "val": "${current_speed}"}`);
 		} else if(pressed_keys.includes(37)) {
-			comms_ws.send('{"type":"command", "name":"left", "val": "2"}');
+			comms_ws.send(`{"type":"command", "name":"left", "val": "${current_speed}"}`);
 		} else if (pressed_keys.includes(38)) {
-			comms_ws.send('{"type":"command", "name":"front", "val": "2"}');
+			comms_ws.send(`{"type":"command", "name":"front", "val": "${current_speed}"}`);
 		} else if (pressed_keys.includes(39)) {
-			comms_ws.send('{"type":"command", "name":"right", "val": "2"}');
+			comms_ws.send(`{"type":"command", "name":"right", "val": "${current_speed}"}`);
 		} else if (pressed_keys.includes(40)) {
-			comms_ws.send('{"type":"command", "name":"back", "val": "2"}');
+			comms_ws.send(`{"type":"command", "name":"back", "val": "${current_speed}"}`);
 		} else if (pressed_keys.includes(33)) {
-			comms_ws.send('{"type":"command", "name":"up", "val": "2"}');
+			comms_ws.send(`{"type":"command", "name":"up", "val": "${current_speed}"}`);
 		} else if (pressed_keys.includes(34)) {
-			comms_ws.send('{"type":"command", "name":"down", "val": "2"}');
+			comms_ws.send(`{"type":"command", "name":"down", "val": "${current_speed}"}`);
 		}
 	}
 
@@ -247,9 +255,6 @@ function setActive(flag, elem) {
 }
 
 function pickHex(color1, color2, weight) {
-	console.log(color1);
-	console.log(color2);
-	console.log(weight);
 	var p = weight;
 	var w = p * 2 - 1;
 	var w1 = (w/1+1) / 2;
