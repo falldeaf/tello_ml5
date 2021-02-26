@@ -76,12 +76,16 @@ wifi.init({
 async function runCommand(comm) {
 	console.log(comm);
 	sendLog(`Saw ${comm.name} command with value ${comm.val}`);
+	var int_val = parseInt(comm.val);
 	switch(comm.name) {
 		case "takeoff":
 			await sdk.control.takeOff();
 			break;
 		case "land":
 			await sdk.control.land();
+		case "speed":
+			await sdk.set.speed(int_val);
+			sendLog(await sdk.read.speed());
 			break;
 		case "emergency":
 			await sdk.control.emergency();
@@ -90,28 +94,28 @@ async function runCommand(comm) {
 			await sdk.control.stop();
 			break;
 		case "up":
-			await sdk.control.move.up(comm.val)
+			await sdk.control.move.up(int_val)
 			break;
 		case "down":
-			await sdk.control.move.down(comm.val);
+			await sdk.control.move.down(int_val);
 			break;
 		case "left":
-			await sdk.control.move.left(comm.val);
+			await sdk.control.move.left(int_val);
 			break;
 		case "right":
-			await sdk.control.move.right(comm.val);
+			await sdk.control.move.right(int_val);
 			break;
 		case "front":
-			await sdk.control.move.front(comm.val);
+			await sdk.control.move.front(int_val);
 			break;
 		case "back":
-			await sdk.control.move.back(comm.val);
+			await sdk.control.move.back(int_val);
 			break;
 		case "rotateleft":
-			await sdk.control.rotate.clockwise(comm.val);
+			await sdk.control.rotate.clockwise(int_val);
 			break;
 		case "rotateright":
-			await sdk.control.rotate.counterClockwise(comm.val);
+			await sdk.control.rotate.counterClockwise(int_val);
 			break;
 		case "flipleft":
 			await sdk.control.flip.left();
@@ -166,8 +170,19 @@ app.get('/connect/:post', async (req, res) => {
 	await delay(2000);
 	await connectCommand();
 	while(!await pingtest('192.168.10.1')){ await delay(1000); }
-	await sdk.control.connect();
+	console.log(await sdk.control.connect());
 	console.log('drone fully connected');
+
+	console.log(await sdk.control.takeOff());
+	console.log(await sdk.set.speed(50));
+	console.log(await sdk.control.move.up(40));
+	console.log(await sdk.control.move.down(40));
+	console.log(await sdk.control.move.left(40));
+	console.log(await sdk.control.rotate.clockwise(180));
+	console.log(await sdk.control.land());
+
+	//set default speed
+	//await sdk.set.speed(30);
 
 	const stateEmitter = await sdk.receiver.state.bind();
 	stateEmitter.on('message', res => comms_ws.broadcast('{"tele":' + JSON.stringify(res) + '}'));
@@ -242,6 +257,6 @@ function scan(search) {
 }
 
 function sendLog(message) {
-	console.log(message);
+	console.log(message.trim());
 	comms_ws.broadcast('{"pong":"' + message + '"}');
 }

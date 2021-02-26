@@ -100,7 +100,8 @@ comms_ws.onopen = function(event){
 	console.log('connected to Comms WS');
 };
 
-comms_ws.onmessage = function(event){ 
+comms_ws.onmessage = function(event){
+	//console.log(event.data);
 	var message = JSON.parse(event.data);
 	if(message.tele) {
 		handleTelemetry(message.tele);
@@ -148,25 +149,25 @@ function handleTelemetry(tel) {
 var keyboard_on = true;
 var gamepad_on = false;
 var sentinal_on = false;
-var current_speed = 2;
+var distance_in_cm = 30;
 setInterval(function(){ 
 	if(keyboard_on) {
 		if (pressed_keys.includes(16) && pressed_keys.includes(37)) {
-			comms_ws.send(`{"type":"command", "name":"rotateleft", "val": "${current_speed}"}`);
+			comms_ws.send(`{"type":"command", "name":"rotateleft", "val": "${distance_in_cm}"}`);
 		} else if (pressed_keys.includes(16) && pressed_keys.includes(39)) {
-			comms_ws.send(`{"type":"command", "name":"rotateright", "val": "${current_speed}"}`);
+			comms_ws.send(`{"type":"command", "name":"rotateright", "val": "${distance_in_cm}"}`);
 		} else if(pressed_keys.includes(37)) {
-			comms_ws.send(`{"type":"command", "name":"left", "val": "${current_speed}"}`);
+			comms_ws.send(`{"type":"command", "name":"left", "val": "${distance_in_cm}"}`);
 		} else if (pressed_keys.includes(38)) {
-			comms_ws.send(`{"type":"command", "name":"front", "val": "${current_speed}"}`);
+			comms_ws.send(`{"type":"command", "name":"front", "val": "${distance_in_cm}"}`);
 		} else if (pressed_keys.includes(39)) {
-			comms_ws.send(`{"type":"command", "name":"right", "val": "${current_speed}"}`);
+			comms_ws.send(`{"type":"command", "name":"right", "val": "${distance_in_cm}"}`);
 		} else if (pressed_keys.includes(40)) {
-			comms_ws.send(`{"type":"command", "name":"back", "val": "${current_speed}"}`);
+			comms_ws.send(`{"type":"command", "name":"back", "val": "${distance_in_cm}"}`);
 		} else if (pressed_keys.includes(33)) {
-			comms_ws.send(`{"type":"command", "name":"up", "val": "${current_speed}"}`);
+			comms_ws.send(`{"type":"command", "name":"up", "val": "${distance_in_cm}"}`);
 		} else if (pressed_keys.includes(34)) {
-			comms_ws.send(`{"type":"command", "name":"down", "val": "${current_speed}"}`);
+			comms_ws.send(`{"type":"command", "name":"down", "val": "${distance_in_cm}"}`);
 		}
 	}
 
@@ -175,32 +176,28 @@ setInterval(function(){
 	}
 }, 500);
 
+function setSpeed(speed) {
+	comms_ws.send(`{"type":"command", "name":"speed", "val": "${speed}"}`);
+}
+
 function takeoffCommand() {
-	if(keyboard_on) {
 		comms_ws.send('{"type":"command", "name":"takeoff"}');
 		props_on = true;
-	}
 }
 
 function landCommand() {
-	if(keyboard_on) {
 		comms_ws.send('{"type":"command", "name":"land"}');
 		//TODO: Maybe wait until distance sensor is really low before showing props off?
 		props_on = false;
-	}
 }
 
 function stopCommand() {
-	if(keyboard_on) {
 		comms_ws.send('{"type":"command", "name":"stop"}');
-	}
 }
 
 function emergencyCommand() {
-	if(keyboard_on) {
 		comms_ws.send('{"type":"command", "name":"emergency"}');
 		props_on = false;
-	}
 }
 
 //Handle Buttons////////////////////
@@ -262,6 +259,5 @@ function pickHex(color1, color2, weight) {
 	var rgb = [Math.round(color1[0] * w1 + color2[0] * w2),
 		Math.round(color1[1] * w1 + color2[1] * w2),
 		Math.round(color1[2] * w1 + color2[2] * w2)];
-	console.log(rgb);
 	return rgb;
 }
