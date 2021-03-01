@@ -1,12 +1,18 @@
+const supports_vr = 'getVRDisplays' in navigator;
+
 var roll = 0;
 var pitch = 0;
 var yaw = 0;
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.119.1/build/three.module.min.js";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.119.1/examples/jsm/controls/OrbitControls.min.js";
 import { VRButton } from "https://cdn.jsdelivr.net/npm/three@0.119.1/examples/jsm/webxr/VRButton.min.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/loaders/GLTFLoader.js";
 
+<<<<<<< Updated upstream
 //import * as THREE from './js/three.module.js';
 
 
@@ -22,6 +28,13 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 
+=======
+const loader = new GLTFLoader();
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+>>>>>>> Stashed changes
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 renderer.xr.enabled = true;
@@ -31,7 +44,10 @@ camera.position.z = 5;
 camera.rotation.x = -0.1;
 
 const controls = new OrbitControls( camera, renderer.domElement );
+<<<<<<< Updated upstream
 controls.update();
+=======
+>>>>>>> Stashed changes
 
 const alight = new THREE.AmbientLight(1, 0xFFFFFF ); // soft white light
 scene.add( alight );
@@ -48,10 +64,32 @@ var vsize = 1;
 const geometry1 = new THREE.PlaneBufferGeometry( 4*vsize, 3*vsize, 20, 1 );
 const material1 = new THREE.MeshBasicMaterial({color: 0x9e49af, side: THREE.DoubleSide});
 
+<<<<<<< Updated upstream
 const video = document.createElement('img');
 video.src = "http://192.168.1.200:81/stream";
 video.crossOrigin = "Anonymous";
 document.body.appendChild(video);
+=======
+//VIDEO SRC
+var video = document.getElementById('player');
+/*
+const video = document.createElement('video');
+//video.autoplay = true;
+video.hidden = true;
+video.muted = true;
+var src = document.createElement("source"); 
+src.type = "video/ogg";
+src.src = "test.ogv";
+video.appendChild(src);
+document.body.appendChild(video);
+video.play();
+*/
+
+//const video = document.createElement('img');
+//video.src = "http://192.168.1.200:81/stream";
+//video.crossOrigin = "Anonymous";
+//document.body.appendChild(video);
+>>>>>>> Stashed changes
 
 //CANVAS TO COMPOSE SCREEN
 const vcanvas = document.createElement('canvas');
@@ -69,7 +107,11 @@ scene.add(plane);
 plane.position.y = 2;
 plane.position.z = -1;
 
+<<<<<<< Updated upstream
 var curvature = 0.7;
+=======
+var curvature = 1;
+>>>>>>> Stashed changes
 var count = 0;
 let pos = plane.geometry.getAttribute("position");
 let pa = pos.array;
@@ -132,8 +174,11 @@ loader.load('/drone_model.glb',	( gltf ) => {
 		drone.scale.y = 0.35;
 		drone.scale.z = 0.35;
 });
+<<<<<<< Updated upstream
 //const gltf = await modelLoader('/drone_model.glb', loader);
 //scene.add(gltf.scene);
+=======
+>>>>>>> Stashed changes
 
 /*const geometry2 = new THREE.BoxGeometry( 1, 1, 1 );
 const material2 = new THREE.MeshBasicMaterial({color: 0x00ff00});
@@ -156,6 +201,7 @@ renderer.setAnimationLoop( function () {
 		});
 	}
 	*/
+<<<<<<< Updated upstream
 
 	//cube.rotation.x += 0.01;
 	//cube.rotation.y += 0.01;
@@ -168,6 +214,20 @@ renderer.setAnimationLoop( function () {
 
 	//if(renderer.xr.isPresenting()) 
 	controls.update();
+=======
+
+	//cube.rotation.x += 0.01;
+	//cube.rotation.y += 0.01;
+	//pos.needsUpdate = true;
+	//plane.geometry.computeVertexNormals();
+	//if ( video.readyState === video.HAVE_ENOUGH_DATA ) {
+		vctx.drawImage( video, 0, 0, 640, 480);
+		if ( vtexture ) vtexture.needsUpdate = true;
+	//}
+
+	//IF xr isn't supported, update the orbitcam
+	if(!supports_vr) controls.update();
+>>>>>>> Stashed changes
 	
 	renderer.render( scene, camera );
 } );
