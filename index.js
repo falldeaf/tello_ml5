@@ -12,23 +12,88 @@ var certificate = fs.readFileSync('server.cert', 'utf8');
 var credentials = {key: private_key, cert: certificate};
 
 const https = require("https");
-const ws = require('ws');
+const websocket = require('ws');
 const express = require('express');
 const app = express();
 const port = 8000;
 
+app.get('/video', (req, res) => {
+	res.send('Trying to connect and command');
+	sdk.control.connect()
+	.then(() => turnOnVideo());
+	//.then((result) => console.log(result))
+	//.catch((error) => console.error(error))
+});
+
+app.get('/connect/:post', async (req, res) => {
+	res.send('connecting...');
+
+	
+	while(!await scan('TELLO')){ await delay(3000); }
+	await delay(2000);
+	await connectCommand();
+	while(!await pingtest('192.168.10.1')){ await delay(1000); }
+	console.log(await sdk.control.connect());
+	console.log('drone fully connected');
+
+	/*
+	console.log(await sdk.control.takeOff());
+	console.log(await sdk.set.speed(50));
+	console.log(await sdk.control.move.up(40));
+	console.log(await sdk.control.move.down(40));
+	console.log(await sdk.control.move.left(40));
+	console.log(await sdk.control.rotate.clockwise(180));
+	console.log(await sdk.control.land());
+	*/
+
+	//set default speed
+	//await sdk.set.speed(30);
+
+	const stateEmitter = await sdk.receiver.state.bind();
+	stateEmitter.on('message', res => comms_wss.broadcast('{"tele":' + JSON.stringify(res) + '}'));
+
+	if(req.params.post === 'video') turnOnVideo();
+});
+
+app.get('/disconnect', (req, res) => {
+	res.send('disconnecting...');
+	wifi.disconnect(error => {
+		if (error) {
+			console.log(error);
+		} else {
+			console.log('Disconnected');
+		}
+	});
+})
+
+app.use(express.static('static'))
+app.use('/scripts', express.static(__dirname + '/node_modules/jmuxer/dist/'));
+
+/*app.listen(port, () => {
+	console.log(`App ready at http://localhost:${port}/index.html`)
+});*/
+
+var server = https.createServer(credentials, app)
+server.listen(port, () => {
+	console.log(`App ready at https://localhost:${port}/index.html`)
+});
+
+
 var connected_to_drone = false;
 
 //Video Websocket
-//const http = require('http');
-const WebSocketServer = require('websocket').server;
-const server1 = https.createServer(credentials);
-server1.listen(5544);
-const video_ws = new WebSocketServer({
-	httpServer: server1
-});
-//const video_ws = new ws.Server({server: server1, port: 5544});
-var video_clients = [];
+const vserver = https.createServer(credentials);
+const video_wss = new websocket.Server({server: vserver, perMessageDeflate: false});
+video_wss.broadcast = function(data) {
+	video_wss.clients.forEach(function each(client) {
+		if (client.readyState === websocket.OPEN) {
+			client.send(data);
+		}
+	});
+}
+vserver.listen(5544);
+
+/*//var video_clients = [];
 video_ws.binaryType = 'arraybuffer';
 //video_ws.on('upgrade', ws.handleUpgrade);
 video_ws.on('request', function(request) {
@@ -42,44 +107,31 @@ video_ws.on('request', function(request) {
 });
 video_ws.broadcast = function(data) {
 	video_clients.forEach(client => client.send(data));
-};
+};*/
+
 
 //Bidirectional Comms Websocket
-const http2 = require('http');
-//const WebSocketServer2 = require('websocket').server;
-
-const server2 = https.createServer(credentials);
-server2.listen(5533);
-const comms_ws = new WebSocketServer({
-	httpServer: server2
-});
-//const comms_ws = new ws.Server({server: server2, port: 5533});
-var comms_clients = [];
-comms_ws.on('request', function(request) {
-	const connection = request.accept(null, request.origin);
-	comms_clients.push(connection) - 1;
-	connection.on('message', function(message) {
-		var client_message_obj = JSON.parse(message.utf8Data);
+const cserver = https.createServer(credentials);
+const comms_wss = new websocket.Server({server: cserver, perMessageDeflate: false});
+comms_wss.on('connection', function connection(ws) {
+	ws.on('message', function incoming(data) {
+		console.log(data);
+		var client_message_obj = JSON.parse(data.utf8Data);
 		switch(client_message_obj.type) {
 			case "command":
 				runCommand(client_message_obj);
 				break;
 		}
 	});
-
-	connection.on('connection', function(comms_ws) {
-		console.log("new conn.");
-		console.log(comms_ws.clients);
-	});
-
-	connection.on('close', function(reasonCode, description) {
-		console.log('Client has disconnected.');
-	});
 });
-comms_ws.broadcast = function(data) {
-	comms_clients.forEach(client => client.send(data));
-};
-
+comms_wss.broadcast = function(data) {
+	comms_wss.clients.forEach(function each(client) {
+		if (client.readyState === websocket.OPEN) {
+			client.send(data);
+		}
+	});
+}
+cserver.listen(5533);
 
 wifi.init({
 	iface: null // network interface, choose a random wifi interface if set to null
@@ -155,7 +207,7 @@ async function turnOnVideo() {
 			h264chunks.push(data.slice(0, idx))
 			numChunkz = numChunkz + 1
 			if (numChunkz === numChunks) {
-				video_ws.broadcast(Buffer.concat(h264chunks));
+				video_wss.broadcast(Buffer.concat(h264chunks));
 				h264chunks = []
 				numChunkz = 0
 			}
@@ -165,66 +217,6 @@ async function turnOnVideo() {
 		}
 	});
 }
-
-app.get('/video', (req, res) => {
-	res.send('Trying to connect and command');
-	sdk.control.connect()
-	.then(() => turnOnVideo());
-	//.then((result) => console.log(result))
-	//.catch((error) => console.error(error))
-});
-
-app.get('/connect/:post', async (req, res) => {
-	res.send('connecting...');
-
-	
-	while(!await scan('TELLO')){ await delay(3000); }
-	await delay(2000);
-	await connectCommand();
-	while(!await pingtest('192.168.10.1')){ await delay(1000); }
-	console.log(await sdk.control.connect());
-	console.log('drone fully connected');
-
-	/*
-	console.log(await sdk.control.takeOff());
-	console.log(await sdk.set.speed(50));
-	console.log(await sdk.control.move.up(40));
-	console.log(await sdk.control.move.down(40));
-	console.log(await sdk.control.move.left(40));
-	console.log(await sdk.control.rotate.clockwise(180));
-	console.log(await sdk.control.land());
-	*/
-
-	//set default speed
-	//await sdk.set.speed(30);
-
-	const stateEmitter = await sdk.receiver.state.bind();
-	stateEmitter.on('message', res => comms_ws.broadcast('{"tele":' + JSON.stringify(res) + '}'));
-
-	if(req.params.post === 'video') turnOnVideo();
-});
-
-app.get('/disconnect', (req, res) => {
-	res.send('disconnecting...');
-	wifi.disconnect(error => {
-		if (error) {
-			console.log(error);
-		} else {
-			console.log('Disconnected');
-		}
-	});
-})
-
-app.use(express.static('static'))
-app.use('/scripts', express.static(__dirname + '/node_modules/jmuxer/dist/'));
-
-/*app.listen(port, () => {
-	console.log(`App ready at http://localhost:${port}/index.html`)
-});*/
-
-https.createServer(credentials, app).listen(port, () => {
-	console.log(`App ready at https://localhost:${port}/index.html`)
-});
 
 async function connectCommand() {
 	console.log('connecting to Tello WIFI AP...');
@@ -275,5 +267,5 @@ function scan(search) {
 
 function sendLog(message) {
 	console.log(message.trim());
-	comms_ws.broadcast('{"pong":"' + message + '"}');
+	comms_wss.broadcast('{"pong":"' + message + '"}');
 }

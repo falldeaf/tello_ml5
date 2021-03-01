@@ -9,24 +9,14 @@ import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.119.1/exampl
 import { VRButton } from "https://cdn.jsdelivr.net/npm/three@0.119.1/examples/jsm/webxr/VRButton.min.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/loaders/GLTFLoader.js";
 
-//import * as THREE from './js/three.module.js';
-
-
-//import * as THREE from 'three';
-//import GLTFLoader from './node_modules/three-gltf-loader';
-//import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three/examples/jsm/loaders/GLTFLoader.js'
-
-//import {VRButton} from 'https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/webxr/VRButton.js';
-//import {OrbitControls} from 'https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/controls/OrbitControls.js';
-
 const loader = new GLTFLoader();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 
+renderer.xr.enabled = true;
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
-renderer.xr.enabled = true;
 document.body.appendChild( VRButton.createButton( renderer ) );
 camera.position.y = 1;
 camera.position.z = 5;
@@ -51,18 +41,8 @@ const material1 = new THREE.MeshBasicMaterial({color: 0x9e49af, side: THREE.Doub
 
 //VIDEO SRC
 var video = document.getElementById('player');
-
-//CANVAS TO COMPOSE SCREEN
-const vcanvas = document.createElement('canvas');
-vcanvas.crossOrigin = "Anonymous";
-vcanvas.width = 640;
-vcanvas.height = 480;
-const vctx = vcanvas.getContext( '2d' );
-// background color if no video present
-vctx.fillStyle = '#FF0000';
-vctx.fillRect( 0, 0, vcanvas.width, vcanvas.height );
-const vtexture = new THREE.VideoTexture(vcanvas);
-var vmaterial = new THREE.MeshBasicMaterial( { map: vtexture, side:THREE.DoubleSide } );
+const vtexture = new THREE.VideoTexture(video);
+var vmaterial = new THREE.MeshBasicMaterial( { map: vtexture } );
 const plane = new THREE.Mesh(geometry1, vmaterial);
 scene.add(plane);
 plane.position.y = 2;
@@ -132,6 +112,11 @@ loader.load('/drone_model.glb',	( gltf ) => {
 		drone.scale.z = 0.35;
 });
 
+setInterval(() => {
+	//vctx.drawImage( video, 0, 0, 640, 480);
+	if ( vtexture ) vtexture.needsUpdate = true;
+}, 500);
+
 renderer.setAnimationLoop( function () {
 	/*
 	gltf.scene.rotation.x = THREE.Math.degToRad(pitch);
@@ -152,8 +137,8 @@ renderer.setAnimationLoop( function () {
 	//pos.needsUpdate = true;
 	//plane.geometry.computeVertexNormals();
 	//if ( video.readyState === video.HAVE_ENOUGH_DATA ) {
-		vctx.drawImage( video, 0, 0, 640, 480);
-		if ( vtexture ) vtexture.needsUpdate = true;
+		//vctx.drawImage( video, 0, 0, 640, 480);
+		//if ( vtexture ) vtexture.needsUpdate = true;
 	//}
 
 	//IF xr isn't supported, update the orbitcam

@@ -4,7 +4,7 @@ var tof = 0;
 
 var battery = document.getElementById('battery_level');
 function setBattery(perc) {
-	if(typeof battery != undefined) {
+	if(battery != null) {
 		battery.style.width = perc + '%';
 		battery.style.backgroundColor = 'rgb(' + pickHex([194,238,0], [255,127,154], perc/100).join(',') + ')';
 	}
@@ -22,7 +22,7 @@ function addLog(message) {
 
 //COMMS Websocket////////////////////////
 var comms_ws;
-var socketURL = 'ws://localhost:5533';
+var socketURL = 'wss://' + window.location.hostname + ':5533';
 
 comms_ws = new WebSocket(socketURL);
 comms_ws.onopen = function(event){
@@ -53,7 +53,7 @@ var jmuxer = new JMuxer({
 });
 
 var video_ws;
-var socketURL = 'ws://localhost:5544';
+var socketURL = 'wss://' + window.location.hostname + ':5544';
 
 video_ws = new WebSocket(socketURL);
 video_ws.onopen = function(event){
@@ -62,6 +62,8 @@ video_ws.onopen = function(event){
 };
 
 video_ws.onmessage = function(event){
+	console.log(event.data);
+	//newVideoChunk();
 	jmuxer.feed({
 		video: new Uint8Array(event.data)
 	});
