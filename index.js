@@ -1,26 +1,36 @@
 'use strict';
 
 require('dotenv').config();
+const fs = require('fs');
 const delay = require('await-delay');
 const wifi = require('node-wifi');
 const ping = require('ping');
+const sdk = require('tellojs');
+
+var private_key  = fs.readFileSync('server.key', 'utf8');
+var certificate = fs.readFileSync('server.cert', 'utf8');
+var credentials = {key: private_key, cert: certificate};
+
+const https = require("https");
+const ws = require('ws');
 const express = require('express');
 const app = express();
 const port = 8000;
-const sdk = require('tellojs');
 
 var connected_to_drone = false;
 
 //Video Websocket
-const http = require('http');
+//const http = require('http');
 const WebSocketServer = require('websocket').server;
-const server = http.createServer();
-server.listen(5544);
+const server1 = https.createServer(credentials);
+server1.listen(5544);
 const video_ws = new WebSocketServer({
-	httpServer: server
+	httpServer: server1
 });
+//const video_ws = new ws.Server({server: server1, port: 5544});
 var video_clients = [];
 video_ws.binaryType = 'arraybuffer';
+//video_ws.on('upgrade', ws.handleUpgrade);
 video_ws.on('request', function(request) {
 	const connection = request.accept(null, request.origin);
 	video_clients.push(connection) - 1;
@@ -36,12 +46,14 @@ video_ws.broadcast = function(data) {
 
 //Bidirectional Comms Websocket
 const http2 = require('http');
-const WebSocketServer2 = require('websocket').server;
-const server2 = http2.createServer();
+//const WebSocketServer2 = require('websocket').server;
+
+const server2 = https.createServer(credentials);
 server2.listen(5533);
-const comms_ws = new WebSocketServer2({
+const comms_ws = new WebSocketServer({
 	httpServer: server2
 });
+//const comms_ws = new ws.Server({server: server2, port: 5533});
 var comms_clients = [];
 comms_ws.on('request', function(request) {
 	const connection = request.accept(null, request.origin);
@@ -173,6 +185,7 @@ app.get('/connect/:post', async (req, res) => {
 	console.log(await sdk.control.connect());
 	console.log('drone fully connected');
 
+	/*
 	console.log(await sdk.control.takeOff());
 	console.log(await sdk.set.speed(50));
 	console.log(await sdk.control.move.up(40));
@@ -180,6 +193,7 @@ app.get('/connect/:post', async (req, res) => {
 	console.log(await sdk.control.move.left(40));
 	console.log(await sdk.control.rotate.clockwise(180));
 	console.log(await sdk.control.land());
+	*/
 
 	//set default speed
 	//await sdk.set.speed(30);
@@ -202,11 +216,14 @@ app.get('/disconnect', (req, res) => {
 })
 
 app.use(express.static('static'))
-
 app.use('/scripts', express.static(__dirname + '/node_modules/jmuxer/dist/'));
 
-app.listen(port, () => {
+/*app.listen(port, () => {
 	console.log(`App ready at http://localhost:${port}/index.html`)
+});*/
+
+https.createServer(credentials, app).listen(port, () => {
+	console.log(`App ready at https://localhost:${port}/index.html`)
 });
 
 async function connectCommand() {
