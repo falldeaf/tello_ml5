@@ -115,7 +115,7 @@ loader.load('/drone_model.glb',	( gltf ) => {
 setInterval(() => {
 	//vctx.drawImage( video, 0, 0, 640, 480);
 	if ( vtexture ) vtexture.needsUpdate = true;
-}, 500);
+}, 200);
 
 renderer.setAnimationLoop( function () {
 	/*
