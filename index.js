@@ -36,15 +36,13 @@ app.get('/connect/:post', async (req, res) => {
 	console.log(await sdk.control.connect());
 	console.log('drone fully connected');
 
-	/*
-	console.log(await sdk.control.takeOff());
+	/*console.log(await sdk.control.takeOff());
 	console.log(await sdk.set.speed(50));
-	console.log(await sdk.control.move.up(40));
-	console.log(await sdk.control.move.down(40));
-	console.log(await sdk.control.move.left(40));
+	console.log(await sdk.control.move.up(4));
+	console.log(await sdk.control.move.down(4));
+	console.log(await sdk.control.move.left(4));
 	console.log(await sdk.control.rotate.clockwise(180));
-	console.log(await sdk.control.land());
-	*/
+	console.log(await sdk.control.land());*/
 
 	//set default speed
 	//await sdk.set.speed(30);
@@ -116,11 +114,15 @@ const comms_wss = new websocket.Server({server: cserver, perMessageDeflate: fals
 comms_wss.on('connection', function connection(ws) {
 	ws.on('message', function incoming(data) {
 		console.log(data);
-		var client_message_obj = JSON.parse(data.utf8Data);
-		switch(client_message_obj.type) {
-			case "command":
-				runCommand(client_message_obj);
-				break;
+		try {
+			var client_message_obj = JSON.parse(data);
+			switch(client_message_obj.type) {
+				case "command":
+					runCommand(client_message_obj);
+					break;
+			}
+		} catch (e) {
+			return console.error(e);
 		}
 	});
 });
