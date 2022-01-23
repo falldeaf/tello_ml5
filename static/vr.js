@@ -3,6 +3,10 @@ const supports_vr = 'getVRDisplays' in navigator;
 var roll = 0;
 var pitch = 0;
 var yaw = 0;
+var toff = 0;
+let ui;
+let bprogressmaterial;
+vr_on = true;
 
 //import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.119.1/build/three.module.min.js";
 //import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.119.1/examples/jsm/controls/OrbitControls.min.js";
@@ -19,7 +23,7 @@ const loader = new GLTFLoader();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-let ui;
+const texture_loader = new THREE.TextureLoader();
 
 renderer.xr.enabled = true;
 renderer.setSize( window.innerWidth, window.innerHeight );
@@ -31,12 +35,10 @@ document.body.appendChild( renderer.domElement );
 
 //const controls = new OrbitControls( camera, renderer.domElement );
 
-const alight = new THREE.AmbientLight(1, 0xFFFFFF ); // soft white light
+const alight = new THREE.AmbientLight(0xFFFFFF, 1); // soft white light
 scene.add( alight );
 
-const color = 0xFFFFFF;
-const intensity = 2;
-const dlight = new THREE.DirectionalLight(color, intensity);
+const dlight = new THREE.DirectionalLight(0xFFFFFF, 2);
 dlight.position.set(0, 10, 0);
 dlight.target.position.set(-5, 0, 0);
 scene.add(dlight);
@@ -44,7 +46,7 @@ scene.add(dlight.target);
 
 var vsize = 0.7;
 const geometry1 = new THREE.PlaneBufferGeometry( 4*vsize, 3*vsize, 20, 1 );
-const material1 = new THREE.MeshBasicMaterial({color: 0x9e49af, side: THREE.DoubleSide});
+const material1 = new THREE.MeshBasicMaterial({color: 0xc400dd, side: THREE.DoubleSide});
 
 //VIDEO SRC
 var video = document.getElementById('player');
@@ -80,6 +82,7 @@ const config = {
 		type: "text",
 		position:{ top:0 },
 		paddingTop: 30,
+		backgroundColor: "#101227",
 		height: 70
 	},
 	log:{
@@ -87,22 +90,22 @@ const config = {
 		overflow: "scroll",
 		position:{ top:70 },
 		height: 372, // default height is 512 so this is 512 - header height:70 - footer height:70
-		backgroundColor: "#bbb",
-		fontColor: "#000"
+		backgroundColor: "#392b60",
+		fontColor: "#DDD"
 	},
-	connect: { type: "button", position:{ bottom: 8, left: 10 },   width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#1bf", hover: "#ff0", onSelect: onConnect },
-	toff:    { type: "button", position:{ bottom: 8, left: 120 }, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#1bf", hover: "#ff0", onSelect: onToff },
-	land:    { type: "button", position:{ bottom: 8, left: 230 }, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#1bf", hover: "#ff0", onSelect: onLand },
-	estop:   { type: "button", position:{ bottom: 8, left: 340 }, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#f00", hover: "#ff0", onSelect: onEstop },
+	connect: { type: "button", position:{ bottom: 8, left: 10 },  fontSize:17, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onConnect },
+	toff:    { type: "button", position:{ bottom: 8, left: 120 }, fontSize:20, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onToff },
+	land:    { type: "button", position:{ bottom: 8, left: 230 }, fontSize:20, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onLand },
+	estop:   { type: "button", position:{ bottom: 8, left: 340 }, fontSize:20, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onEstop },
 	renderer
 }
 const content = {
-	header: "Drone Controls",
+	header: "Tello Control",
 	log: "",
-	connect: "con",
-	toff: "toff",
+	connect: "connect",
+	toff: "takeoff",
 	land: "land",
-	estop: "estop"
+	estop: "e-stop"
 }
 
 ui = new CanvasUI( content, config );
@@ -149,7 +152,7 @@ zline.position.z = -2.5;
 scene.add( zline );
 
 const geometry = new THREE.CircleGeometry( graph_width, 32 );
-const material = new THREE.MeshPhongMaterial({color: 0xFF0000, opacity: 0.2, transparent: true});
+const material = new THREE.MeshPhongMaterial({color: 0x0e0914, opacity: 0.2, transparent: true});
 const circle = new THREE.Mesh( geometry, material );
 circle.position.z = -2.5;
 scene.add( circle );
@@ -165,6 +168,40 @@ loader.load('/drone_model.glb',	( gltf ) => {
 		drone.scale.y = 0.15;
 		drone.scale.z = 0.15;
 });
+
+//Battery 3D model
+const bcgeometry = new THREE.CylinderGeometry( .2, .2, .7, 20 );
+const bcmaterial = new THREE.MeshPhongMaterial({color: 0xdddddd, opacity: 0.4, transparent: true});
+const batterycontain = new THREE.Mesh( bcgeometry, bcmaterial );
+texture_loader.load('env_map.jpg', function (texture){
+	texture.mapping = THREE.EquirectangularReflectionMapping;
+	texture.encoding = THREE.sRGBEncoding;
+	bcmaterial.envMap = texture;
+});
+//texture_equirec.needsUpdate = true;
+batterycontain.position.x = 1.6;
+batterycontain.position.y = 1.5;
+batterycontain.position.z = -2.7;
+scene.add( batterycontain );
+
+//Battery cap
+const bctgeometry = new THREE.CylinderGeometry( .08, .08, .07, 20 );
+//const bcmaterial = new THREE.MeshPhongMaterial({color: 0x0e0914, opacity: 0.5, transparent: true});
+const batterycontaintop = new THREE.Mesh( bctgeometry, bcmaterial );
+batterycontaintop.position.x = 1.6;
+batterycontaintop.position.y = 1.86;
+batterycontaintop.position.z = -2.7;
+scene.add( batterycontaintop );
+
+//Battery inside progress meter
+const bprogressgeometry = new THREE.CylinderGeometry( .18, .18, .65, 20 );
+bprogressgeometry.translate(0,0.325,0);
+bprogressmaterial = new THREE.MeshPhongMaterial({color: 0xffffff});
+const batteryprogress = new THREE.Mesh( bprogressgeometry, bprogressmaterial );
+batteryprogress.position.x = 1.6;
+batteryprogress.position.y = 1.5-0.325;
+batteryprogress.position.z = -2.7;
+scene.add( batteryprogress );
 
 function onSessionStart(){
 	//ui.mesh.position.set( 0, 1, -3 );
@@ -227,6 +264,63 @@ setInterval(() => {
 	if ( vtexture ) vtexture.needsUpdate = true;
 }, 200);
 
+//Update the log and battery
+comms_ws.onmessage = function(event){
+	//console.log(event.data);
+	var message = JSON.parse(event.data);
+	if(message.tele) {
+		let tel = message.tele;
+		pitch = tel.pitch;
+		roll = tel.roll;
+		yaw = tel.yaw;
+		tof = tel.tof;
+		setBattery(tel.battery);
+	}
+
+	if(message.pong) {
+		writeLog(message.pong);
+	}
+};
+
+function setBattery(percent) {
+	batteryprogress.scale.y = percent/100;
+	let col = colorGradient(percent/100, {red: 217, green: 83, blue: 79}, {red: 240, green: 173, blue: 78}, {red: 92, green: 184, blue: 91});
+	console.log(col);
+	bprogressmaterial.color.set(new THREE.Color(col));
+}
+window.setBattery = setBattery;
+
+function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
+	var color1 = rgbColor1;
+	var color2 = rgbColor2;
+	var fade = fadeFraction;
+
+	// Do we have 3 colors for the gradient? Need to adjust the params.
+	if (rgbColor3) {
+		fade = fade * 2;
+
+		// Find which interval to use and adjust the fade percentage
+		if (fade >= 1) {
+			fade -= 1;
+			color1 = rgbColor2;
+			color2 = rgbColor3;
+		}
+	}
+
+	var diffRed = color2.red - color1.red;
+	var diffGreen = color2.green - color1.green;
+	var diffBlue = color2.blue - color1.blue;
+
+	var gradient = {
+		red: parseInt(Math.floor(color1.red + (diffRed * fade)), 10),
+		green: parseInt(Math.floor(color1.green + (diffGreen * fade)), 10),
+		blue: parseInt(Math.floor(color1.blue + (diffBlue * fade)), 10),
+	};
+
+	//return {r: gradient.red, g: gradient.green, b: gradient.blue};
+	return 'rgb(' + gradient.red + ', ' + gradient.green + ', ' + gradient.blue + ')';
+}
+
 renderer.setAnimationLoop( function () {
 	//IF xr isn't supported, update the orbitcam
 	if(!supports_vr) controls.update();
@@ -234,13 +328,14 @@ renderer.setAnimationLoop( function () {
 	renderer.render( scene, camera );
 });
 
-function onConnect() { console.log("pressed oncon!"); writeLog("connect button") }
-function onToff()    { writeLog("toff button") }
-function onLand()    { writeLog("land button") }
-function onEstop()   { writeLog("estop button") }
+//map buttons to the functions
+function onConnect() { connect() }
+function onToff()    { takeoffCommand() }
+function onLand()    { landCommand() }
+function onEstop()   { emergencyCommand() }
 
 function writeLog(line) {
-	ui.updateElement("log", log_string += line + "\n");
+	ui.updateElement("log", line += log_string + "\n");
 }
 writeLog("fooey");
 writeLog("tooey");
