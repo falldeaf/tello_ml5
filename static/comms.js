@@ -15,6 +15,7 @@ comms_ws.onopen = function(event){
 	console.log('connected to Comms WS');
 };
 
+/* //Moved this to standardUI and VR since they need to take different actions
 comms_ws.onmessage = function(event){
 	//console.log(event.data);
 	var message = JSON.parse(event.data);
@@ -26,6 +27,7 @@ comms_ws.onmessage = function(event){
 		addLog(message.pong);
 	}
 };
+*/
 
 //VIDEO Websocket////////////////////////
 var h264chunks = [];
@@ -95,7 +97,8 @@ function setSpeed(speed) {
 }
 
 function connect() { //Connect w/ video
-	fetch('https://localhost:8000/connect/video');
+	console.log("connect command sent");
+	fetch('https://' + window.location.hostname + ':8000/connect/video');
 }
 
 function takeoffCommand() {

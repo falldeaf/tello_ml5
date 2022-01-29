@@ -3,9 +3,11 @@
 	<meta charset="UTF-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
 	<link rel="icon" href="drone.png" type="image/x-icon" />
 	<title>VR Drone Pilot Interface</title>
-	<!--<script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>-->
 	<style>
 		body { margin: 0; }
 	</style>
@@ -15,6 +17,7 @@
 	<video width="960" height="720" id="player" autoplay hidden></video>
 	<div id="log" style="display: none;"></div>
 	<script type="text/javascript" src="/scripts/jmuxer.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
 	<script type="text/javascript" src="comms.js"></script>
 	<script type="module" src="vr.js"></script>
 </body>
