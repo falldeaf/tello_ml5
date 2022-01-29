@@ -61,7 +61,7 @@ var yaw = 0;
 	circle.rotateX( - Math.PI / 2);
 
 	//Drone
-	const gltf = await modelLoader('/drone_model.glb', loader);
+	const gltf = await modelLoader('img/drone_model.glb', loader);
 	scene.add(gltf.scene);
 
 	// LIGHT

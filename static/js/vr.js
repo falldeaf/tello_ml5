@@ -14,9 +14,9 @@ vr_on = true;
 //import { VRButton } from "https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/webxr/VRButton.min.js";
 //import { VRController } from "https://raw.githubusercontent.com/stewdio/THREE.VRController/master/VRController.js";
 
-import * as THREE from "./build/three.module.js";
-import { GLTFLoader } from "./GLTFLoader.js";
 import { XRControllerModelFactory } from "https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/webxr/XRControllerModelFactory.min.js";
+import * as THREE from "./three.module.js";
+import { GLTFLoader } from "./GLTFLoader.js";
 import { CanvasUI } from './CanvasUI.js'
 import { VRButton } from "./VRButton.js";
 
@@ -105,7 +105,7 @@ const config = {
 	renderer
 }
 const content = {
-	header: "Tello Control",
+	header: "Tello Control Log",
 	log: "",
 	connect: "connect",
 	toff: "takeoff",
@@ -165,12 +165,12 @@ circle.rotateX( - Math.PI / 2);
 
 //Drone
 var drone;
-loader.load('/drone_model.glb',	( gltf ) => {
+loader.load('img/drone_model.glb',	( gltf ) => {
 		drone = gltf.scene;
 		scene.add( gltf.scene );
 		const prop_material = new THREE.MeshPhongMaterial({color: 0xe379c6});
 		const body_material = new THREE.MeshPhongMaterial({color: 0x222222});
-		console.log(drone);
+		//console.log(drone);
 		drone.children[0].material = prop_material;
 		drone.children[1].material = body_material;
 		drone.children[2].material = prop_material;
@@ -290,7 +290,7 @@ const active_arrow_material = new THREE.MeshPhongMaterial({
 });
 
 //Load Arrows (movement indicator)
-loader.load('/arrow.glb',	( gltf ) => {
+loader.load('img/arrow.glb',	( gltf ) => {
 		let arrow = gltf.scene.children[0];
 		arrow.material = inactive_arrow_material;
 		left_arrow = arrow.clone();
@@ -301,7 +301,7 @@ loader.load('/arrow.glb',	( gltf ) => {
 
 
 //Add an environment map to stuff
-texture_loader.load('/env_map.jpg', function (texture){
+texture_loader.load('img/env_map.jpg', function (texture){
 	texture.mapping = THREE.EquirectangularReflectionMapping;
 	texture.encoding = THREE.sRGBEncoding;
 	bcmaterial.envMap = texture;

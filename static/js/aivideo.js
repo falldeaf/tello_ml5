@@ -17,7 +17,7 @@ ctx.fillRect(0, 0, canvas.width, canvas.height);
 //Put video icon on top of unloaded screen temporarily
 var img = new Image();
 img.onload = function() { ctx.drawImage(img, canvas.width/2-100, canvas.height/2-100, 200, 200); }
-img.src = "/lens.svg";
+img.src = "img/lens.svg";
 var video = document.getElementById("player");
 
 cocoSsd.load().then(model => {
