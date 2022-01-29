@@ -525,4 +525,3 @@ function writeLog(line) {
 	log_string = `${"*" + line.padEnd(45, ".")} ${log_string}`;
 	ui.updateElement("log", log_string);
 }
-writeLog("Test");
