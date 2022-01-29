@@ -1,5 +1,6 @@
 const supports_vr = 'getVRDisplays' in navigator;
 
+//Global Vars
 var roll = 0;
 var pitch = 0;
 var yaw = 0;
@@ -8,6 +9,13 @@ let ui, bprogressmaterial, left_arrow, right_arrow;
 let modes = {left_mode: "", right_mode: "", squeezed: ""};
 window.modes = modes;
 vr_on = true;
+
+//Audio
+let morph_sound = new Audio('audio/morph.mp3');
+let click_sound = new Audio('audio/click.mp3');
+let entry_sound = new Audio('audio/new_log_entry.mp3');
+morph_sound.volume = 0.6;
+entry_sound.volume = 0.6;
 
 //import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.119.1/build/three.module.min.js";
 //import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.119.1/examples/jsm/controls/OrbitControls.min.js";
@@ -37,10 +45,21 @@ document.body.appendChild( renderer.domElement );
 
 //const controls = new OrbitControls( camera, renderer.domElement );
 
-const alight = new THREE.AmbientLight(0xFFFFFF, 1); // soft white light
+//Ground Grid
+const helper = new THREE.GridHelper( 1000, 40, 0x000000, 0x000000 );
+helper.position.y = -75;
+scene.add( helper );
+
+//Floor (box to stand on)
+const floor = new THREE.Mesh( new THREE.CircleGeometry( 1, 32 ), new THREE.MeshPhongMaterial({color: 0x333333}) );
+floor.rotation.set(-1.5, 0, 0);
+floor.position.z = 0.2;
+scene.add( floor );
+
+const alight = new THREE.AmbientLight(0xFFFFFF, 1.2); // soft white light
 scene.add( alight );
 
-const dlight = new THREE.DirectionalLight(0xFFFFFF, 2);
+const dlight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
 dlight.position.set(0, 10, 0);
 dlight.target.position.set(-5, 0, 0);
 scene.add(dlight);
@@ -85,7 +104,7 @@ const config = {
 		fontFamily: "Fira Code",
 		position:{ top:0 },
 		paddingTop: 30,
-		backgroundColor: "#101227",
+		backgroundColor: "#392b60",
 		height: 70
 	},
 	log:{
@@ -95,13 +114,13 @@ const config = {
 		overflow: "scroll",
 		position:{ top:70 },
 		height: 372, // default height is 512 so this is 512 - header height:70 - footer height:70
-		backgroundColor: "#392b60",
+		backgroundColor: "#101227",
 		fontColor: "#DDD"
 	},
-	connect: { type: "button", position:{ bottom: 8, left: 10 },  fontFamily: "Fira Code", fontSize:17, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onConnect },
-	toff:    { type: "button", position:{ bottom: 8, left: 120 }, fontFamily: "Fira Code", fontSize:20, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onToff },
+	connect: { type: "button", position:{ bottom: 8, left: 10 },  fontFamily: "Fira Code", fontSize:14, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onConnect },
+	toff:    { type: "button", position:{ bottom: 8, left: 120 }, fontFamily: "Fira Code", fontSize:14, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onToff },
 	land:    { type: "button", position:{ bottom: 8, left: 230 }, fontFamily: "Fira Code", fontSize:20, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onLand },
-	estop:   { type: "button", position:{ bottom: 8, left: 340 }, fontFamily: "Fira Code", fontSize:20, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onEstop },
+	estop:   { type: "button", position:{ bottom: 8, left: 340 }, fontFamily: "Fira Code", fontSize:15, width: 100, height: 55, fontColor: "#FFF", backgroundColor: "#2f4050", hover: "#11171c", onSelect: onEstop },
 	renderer
 }
 const content = {
@@ -169,7 +188,7 @@ loader.load('img/drone_model.glb',	( gltf ) => {
 		drone = gltf.scene;
 		scene.add( gltf.scene );
 		const prop_material = new THREE.MeshPhongMaterial({color: 0xe379c6});
-		const body_material = new THREE.MeshPhongMaterial({color: 0x222222});
+		const body_material = new THREE.MeshPhongMaterial({color: 0x555555});
 		//console.log(drone);
 		drone.children[0].material = prop_material;
 		drone.children[1].material = body_material;
@@ -349,6 +368,11 @@ function updateControllerInput(control, arrow, global_mode) {
 
 	if(mode !== modes[global_mode]) {
 		modes[global_mode] = mode;
+		if(modes['squeezed'] !== '') {
+			morph_sound.pause();
+			morph_sound.play();
+		}
+
 		setNewArrowMode(arrow, mode, arrow_rot, arrow_morph);
 	}
 }
@@ -374,6 +398,11 @@ function setNewArrowMode(arrow, mode, arrow_rot, arrow_morph) {
 	})
 	.easing(TWEEN.Easing.Elastic.InOut)
 	.start();
+}
+
+//Show errors in the log
+comms_ws.onerror = function(event){
+	writeLog("Websocket Error: " + event);
 }
 
 //Update the log and battery
@@ -485,14 +514,15 @@ renderer.setAnimationLoop( function () {
 });
 
 //map buttons to the functions
-function onConnect() { writeLog("Connecting"); connect(); }
-function onToff()    { takeoffCommand(); }
-function onLand()    { landCommand(); }
-function onEstop()   { emergencyCommand(); }
+function onConnect() { click_sound.play(); writeLog("Connecting"); connect(); }
+function onToff()    { click_sound.play(); takeoffCommand(); }
+function onLand()    { click_sound.play(); landCommand(); }
+function onEstop()   { click_sound.play(); emergencyCommand(); }
 
 function writeLog(line) {
-	//48 chars max
-	console.log(`${line.padEnd(46, ".")} chars(${line.length})`);
-	log_string = `${line.padEnd(46, ".")} ${log_string}`;
+	//46 chars max
+	entry_sound.play();
+	log_string = `${"*" + line.padEnd(45, ".")} ${log_string}`;
 	ui.updateElement("log", log_string);
 }
+writeLog("Test");
