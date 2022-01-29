@@ -1,3 +1,8 @@
+////////////////////////////////
+// ML5 Machine learning interface for video from Drone
+// Currently it only overlays object recognition over detected objects
+////////////////////////////////
+
 //VIDEO ML
 var deadzone = 180;
 
@@ -21,6 +26,8 @@ cocoSsd.load().then(model => {
 
 		ctx.drawImage(video,0,0,960,720);
 
+		//Show a rail on the left and right side of the screen where action/movment should take place
+		//if the drone were to track an object.
 		if(sentinal_on) {
 			// Left rail
 			ctx.beginPath();
@@ -39,7 +46,7 @@ cocoSsd.load().then(model => {
 			ctx.setLineDash([]);
 		}
 
-		//ctx.clearRect(0, 0, c.width, c.height);
+		//Draw colored squares over people and dogs recognized in the video feed
 		result.forEach(element => {
 			if(element.score > 0.5) {
 				ctx.beginPath();
