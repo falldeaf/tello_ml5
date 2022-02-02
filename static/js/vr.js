@@ -6,9 +6,9 @@ var pitch = 0;
 var yaw = 0;
 var toff = 0;
 let ui, bprogressmaterial, left_arrow, right_arrow;
+let props_on = false;
 let modes = {left_mode: "", right_mode: "", squeezed: ""};
 window.modes = modes;
-vr_on = true;
 
 //Audio
 let morph_sound = new Audio('audio/morph.mp3');
@@ -73,7 +73,7 @@ const material1 = new THREE.MeshBasicMaterial({color: 0xc400dd, side: THREE.Doub
 var video = document.getElementById('player');
 const vtexture = new THREE.VideoTexture(video);
 var vmaterial = new THREE.MeshBasicMaterial( { map: vtexture } );
-const plane = new THREE.Mesh(geometry1, material1);//vmaterial);
+const plane = new THREE.Mesh(geometry1, vmaterial);
 scene.add(plane);
 plane.position.y = 2;
 plane.position.z = -3;
@@ -411,9 +411,13 @@ comms_ws.onmessage = function(event){
 	var message = JSON.parse(event.data);
 	if(message.tele) {
 		let tel = message.tele;
-		pitch = tel.pitch;
-		roll = tel.roll;
-		yaw = tel.yaw;
+		
+		drone.rotation.x = THREE.Math.degToRad(tel.pitch);
+		drone.rotation.y = THREE.Math.degToRad(tel.yaw);
+		drone.rotation.z = THREE.Math.degToRad(tel.roll);
+		//pitch = tel.pitch;
+		//roll = tel.roll;
+		//yaw = tel.yaw;
 		tof = tel.tof;
 		setBattery(tel.battery);
 	}
@@ -509,15 +513,24 @@ renderer.setAnimationLoop( function () {
 		updateControllerInput(controller_left, left_arrow, "left_mode");
 		updateControllerInput(controller_right, right_arrow, "right_mode");
 		ui.update();
+
+		//If props should be on
+		if(props_on) {
+			drone.children.forEach(child => {
+				if(child.name.includes('prop')) {
+					child.rotation.y += 1;
+				}
+			});
+		}
 	}
 	renderer.render( scene, camera );
 });
 
 //map buttons to the functions
 function onConnect() { click_sound.play(); writeLog("Connecting"); connect(); }
-function onToff()    { click_sound.play(); takeoffCommand(); }
-function onLand()    { click_sound.play(); landCommand(); }
-function onEstop()   { click_sound.play(); emergencyCommand(); }
+function onToff()    { props_on = true; click_sound.play(); takeoffCommand(); }
+function onLand()    { props_on = false; click_sound.play(); landCommand(); }
+function onEstop()   { props_on = false; click_sound.play(); emergencyCommand(); }
 
 function writeLog(line) {
 	//46 chars max
