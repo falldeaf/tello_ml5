@@ -17,11 +17,6 @@ let entry_sound = new Audio('audio/new_log_entry.mp3');
 morph_sound.volume = 0.6;
 entry_sound.volume = 0.6;
 
-//import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.119.1/build/three.module.min.js";
-//import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.119.1/examples/jsm/controls/OrbitControls.min.js";
-//import { VRButton } from "https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/webxr/VRButton.min.js";
-//import { VRController } from "https://raw.githubusercontent.com/stewdio/THREE.VRController/master/VRController.js";
-
 import { XRControllerModelFactory } from "https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/webxr/XRControllerModelFactory.min.js";
 import * as THREE from "./three.module.js";
 import { GLTFLoader } from "./GLTFLoader.js";
@@ -38,12 +33,6 @@ scene.background = new THREE.Color(0x17171c);
 renderer.xr.enabled = true;
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
-//document.body.appendChild( VRButton.createButton( renderer ) );
-//camera.position.y = 0;
-//camera.position.z = 0;
-//camera.rotation.x = 0;
-
-//const controls = new OrbitControls( camera, renderer.domElement );
 
 //Ground Grid
 const helper = new THREE.GridHelper( 1000, 40, 0x000000, 0x000000 );
@@ -56,15 +45,18 @@ floor.rotation.set(-1.5, 0, 0);
 floor.position.z = 0.2;
 scene.add( floor );
 
-const alight = new THREE.AmbientLight(0xFFFFFF, 1.2); // soft white light
+//Soft white ambient light
+const alight = new THREE.AmbientLight(0xFFFFFF, 1.2);
 scene.add( alight );
 
+//spotlight pointed at player to light controllers
 const dlight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
 dlight.position.set(0, 10, 0);
 dlight.target.position.set(-5, 0, 0);
 scene.add(dlight);
 scene.add(dlight.target);
 
+//Video Screen geometry and video texture
 var vsize = 0.7;
 const geometry1 = new THREE.PlaneBufferGeometry( 4*vsize, 3*vsize, 20, 1 );
 const material1 = new THREE.MeshBasicMaterial({color: 0xc400dd, side: THREE.DoubleSide});
@@ -247,11 +239,13 @@ var controller_right = renderer.xr.getController(0);
 scene.add( controller_right );
 controller_right.addEventListener("squeezestart", ()=> {
 	console.log("right squeezed");
+	right_line.visible = false;
 	right_arrow.material = active_arrow_material;
 	modes['squeezed'] = "right";
 });
 controller_right.addEventListener("squeezeend", ()=> {
 	console.log("right unsqueezed");
+	right_line.visible = true;
 	right_arrow.material = inactive_arrow_material;
 	if(modes['squeezed'] == "right") modes['squeezed'] = "";
 });
@@ -265,11 +259,13 @@ var controller_left = renderer.xr.getController(1);
 scene.add( controller_left );
 controller_left.addEventListener("squeezestart", ()=> {
 	console.log("left squeezed");
+	left_line.visible = false;
 	left_arrow.material = active_arrow_material;
 	modes['squeezed'] = "left";
 });
 controller_left.addEventListener("squeezeend", ()=> {
 	console.log("left unsqueezed");
+	left_line.visible = true;
 	left_arrow.material = inactive_arrow_material;
 	if(modes['squeezed'] == "left") modes['squeezed'] = "";
 });
@@ -284,9 +280,11 @@ const cont_geometry = new THREE.BufferGeometry().setFromPoints( [ new THREE.Vect
 const cline = new THREE.Line( cont_geometry );
 cline.name = 'line';
 cline.scale.z = 10;
+let left_line = cline.clone();
+let right_line = cline.clone();
 
-controller_right.add( cline.clone() );
-controller_left.add( cline.clone() );
+controller_right.add( right_line );
+controller_left.add( left_line );
 
 //Arrows (Direction indicators hovering over controllers)
 const inactive_arrow_material = new THREE.MeshPhongMaterial({
