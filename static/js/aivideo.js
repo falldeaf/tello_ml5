@@ -3,30 +3,27 @@
 // Currently it only overlays object recognition over detected objects
 ////////////////////////////////
 
-//VIDEO ML
-var deadzone = 180;
-
-var c = document.getElementById("canvas");
-var ctx = c.getContext("2d");
-var grd = ctx.createLinearGradient(0, 0, canvas.width, 0);
-grd.addColorStop(0, "#111");
-grd.addColorStop(1, "#333");
-ctx.fillStyle = grd;
-ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-//Put video icon on top of unloaded screen temporarily
-var img = new Image();
-img.onload = function() { ctx.drawImage(img, canvas.width/2-100, canvas.height/2-100, 200, 200); }
-img.src = "img/lens.svg";
 var video = document.getElementById("player");
+var c = document.getElementById("canvas");
 
 if(typeof cocoSsd === 'undefined') {
-
-	setInterval(()=>{
-		ctx.drawImage(video,0,0,960,720);
-	}, 100);
-
+	video.removeAttribute("hidden");
+	c.style.display = "none";
 } else {
+	//VIDEO ML
+	var deadzone = 180;
+	
+	var ctx = c.getContext("2d");
+	var grd = ctx.createLinearGradient(0, 0, canvas.width, 0);
+	grd.addColorStop(0, "#111");
+	grd.addColorStop(1, "#333");
+	ctx.fillStyle = grd;
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+	//Put video icon on top of unloaded screen temporarily
+	var img = new Image();
+	img.onload = function() { ctx.drawImage(img, canvas.width/2-100, canvas.height/2-100, 200, 200); }
+	img.src = "img/lens.svg";
 
 	cocoSsd.load().then(model => {
 		setInterval(async function(){
