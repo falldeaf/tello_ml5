@@ -37,25 +37,30 @@ var numChunkz = 0;
 var jmuxer = new JMuxer({
 	node: 'player',
 	mode: 'video',
-	flushingTime: 1
+	flushingTime: 100,
+	maxDelay: 100,
+	fps: 30
 });
 
 var video_ws;
 var socketURL = 'wss://' + window.location.hostname + ':5544';
 
-video_ws = new WebSocket(socketURL);
-video_ws.onopen = function(event){
-	console.log('connected to Video WS');
-	video_ws.binaryType = 'arraybuffer';
-};
+window.onload = ()=> {
+	video_ws = new WebSocket(socketURL);
+	video_ws.onopen = function(event){
+		console.log('connected to Video WS');
+		video_ws.binaryType = 'arraybuffer';
 
-video_ws.onmessage = function(event){
-	console.log(event.data);
-	//newVideoChunk();
-	jmuxer.feed({
-		video: new Uint8Array(event.data)
-	});
-};
+		video_ws.onmessage = function(event){
+			//newVideoChunk();
+			//console.log(event.data);
+			jmuxer.feed({
+				video: new Uint8Array(event.data)
+			});
+		};
+	};
+}
+
 
 var keyboard_on = true;
 var gamepad_on = false;

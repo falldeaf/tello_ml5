@@ -81,13 +81,19 @@ var connected_to_drone = false;
 
 //Video Websocket
 const vserver = https.createServer(credentials);
-const video_wss = new websocket.Server({server: vserver, perMessageDeflate: false});
-video_wss.broadcast = function(data) {
-	video_wss.clients.forEach(function each(client) {
+const video_wss = new websocket.Server({server: vserver}); //, perMessageDeflate: false});
+let latest_client = {};
+video_wss.on('connection', function(client) {
+	console.log("new video websocket conn.");
+	latest_client = client;
+});
+video_wss.broadcast = (data)=> {
+	if(latest_client.readyState === websocket.OPEN) latest_client.send(data);
+	/*video_wss.clients.forEach(function each(client) {
 		if (client.readyState === websocket.OPEN) {
 			client.send(data);
 		}
-	});
+	});*/
 }
 vserver.listen(5544);
 
@@ -113,7 +119,7 @@ const cserver = https.createServer(credentials);
 const comms_wss = new websocket.Server({server: cserver, perMessageDeflate: false});
 comms_wss.on('connection', function connection(ws) {
 	ws.on('message', function incoming(data) {
-		console.log(data);
+		//console.log(data);
 		try {
 			var client_message_obj = JSON.parse(data);
 			switch(client_message_obj.type) {
@@ -202,8 +208,8 @@ var h264chunks = []
 var numChunks = 3
 var numChunkz = 0
 async function turnOnVideo() {
-	const videoEmitter = await sdk.receiver.video.bind() 
-	videoEmitter.on('message', data => {
+	const video_emitter = await sdk.receiver.video.bind() 
+	video_emitter.on('message', data => {
 		var idx = data.indexOf(Buffer.from([0, 0, 0, 1]))
 		if (idx > -1 && h264chunks.length > 0) {
 			h264chunks.push(data.slice(0, idx))
@@ -259,7 +265,7 @@ function scan(search) {
 						return resolve(true);
 					}
 				});
-				sendLog(search + " not found");
+				sendLog("Searching for " + search);
 				console.log(search + " not found");
 				return resolve(false);
 			}
@@ -271,3 +277,7 @@ function sendLog(message) {
 	console.log(message.trim());
 	comms_wss.broadcast('{"pong":"' + message + '"}');
 }
+
+process.on('unhandledRejection', function(reason, promise) {
+	console.log(promise);
+});

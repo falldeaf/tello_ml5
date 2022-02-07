@@ -405,7 +405,6 @@ comms_ws.onerror = function(event){
 
 //Update the log and battery
 comms_ws.onmessage = function(event){
-	console.log(event.data);
 	var message = JSON.parse(event.data);
 	if(message.tele) {
 		let tel = message.tele;
@@ -413,9 +412,7 @@ comms_ws.onmessage = function(event){
 		drone.rotation.x = THREE.Math.degToRad(tel.pitch);
 		drone.rotation.y = THREE.Math.degToRad(tel.yaw);
 		drone.rotation.z = THREE.Math.degToRad(tel.roll);
-		//pitch = tel.pitch;
-		//roll = tel.roll;
-		//yaw = tel.yaw;
+
 		tof = tel.tof;
 		setBattery(tel.battery);
 	}
