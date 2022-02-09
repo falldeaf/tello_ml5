@@ -1,13 +1,14 @@
 const supports_vr = 'getVRDisplays' in navigator;
 
 //Global Vars
-var roll = 0;
-var pitch = 0;
-var yaw = 0;
-var toff = 0;
+let roll = 0;
+let pitch = 0;
+let yaw = 0;
+let toff = 0;
 let ui, bprogressmaterial, left_arrow, right_arrow;
 let props_on = false;
-let modes = {left_mode: "", right_mode: "", squeezed: ""};
+
+let modes = {left_mode: false, right_mode: false, left_squeeze: "", right_squeeze: ""};
 window.modes = modes;
 
 //Audio
@@ -241,13 +242,13 @@ controller_right.addEventListener("squeezestart", ()=> {
 	console.log("right squeezed");
 	right_line.visible = false;
 	right_arrow.material = active_arrow_material;
-	modes['squeezed'] = "right";
+	modes.right_squeeze = true;
 });
 controller_right.addEventListener("squeezeend", ()=> {
 	console.log("right unsqueezed");
 	right_line.visible = true;
 	right_arrow.material = inactive_arrow_material;
-	if(modes['squeezed'] == "right") modes['squeezed'] = "";
+	modes.right_squeeze = false;
 });
 
 var controllerGrip = renderer.xr.getControllerGrip(0);
@@ -261,13 +262,13 @@ controller_left.addEventListener("squeezestart", ()=> {
 	console.log("left squeezed");
 	left_line.visible = false;
 	left_arrow.material = active_arrow_material;
-	modes['squeezed'] = "left";
+	modes.left_squeeze = true;
 });
 controller_left.addEventListener("squeezeend", ()=> {
 	console.log("left unsqueezed");
 	left_line.visible = true;
 	left_arrow.material = inactive_arrow_material;
-	if(modes['squeezed'] == "left") modes['squeezed'] = "";
+	modes.left_squeeze = false;
 });
 
 var controllerGrip1 = renderer.xr.getControllerGrip(1);
@@ -326,7 +327,7 @@ texture_loader.load('img/env_map.jpg', function (texture){
 	right_arrow.material.envMap = texture;
 });
 
-function updateControllerInput(control, arrow, global_mode) {
+function updateControllerInput(control, arrow, side) {
 	//Keep arrow above controller
 	arrow.position.set(control.position.x, control.position.y + 0.15, control.position.z);
 
@@ -334,39 +335,59 @@ function updateControllerInput(control, arrow, global_mode) {
 	let mode = "";
 	let arrow_rot  = {};
 	let arrow_morph  = {};
-	if(control.rotation.x <= -0.4) { //fly forward
+	if(control.rotation.x <= -0.4) { //forward
 		mode = "forw";
-		arrow_rot = {x: 0, y: 0, z: 0};
-		arrow_morph = {straight: 1, left: 0, right: 0};
+		if(side === "left") { //Straight Arrow Forward
+			arrow_rot = {x: 0, y: 0, z: 0};
+			arrow_morph = {straight: 1, left: 0, right: 0, looped: 0};
+		} else {			  //Straight Arrow Down
+			arrow_rot = {x: -1.5, y: 0, z: 0};
+			arrow_morph = {straight: 1, left: 0, right: 0, looped: 0};
+		}
 	} else if (control.rotation.x >= 0.4) {
 		mode = "back";
-		arrow_rot = {x: -3.14, y: 0, z: -3.14};
-		arrow_morph = {straight: 1, left: 0, right: 0};
+		if(side === "left") { //Straight Arrow Back
+			arrow_rot = {x: -3.14, y: 0, z: -3.14};
+			arrow_morph = {straight: 1, left: 0, right: 0, looped: 0};
+		} else {			  //Straight Arrow Down
+			arrow_rot = {x: 1.5, y: 0, z: 0};
+			arrow_morph = {straight: 1, left: 0, right: 0, looped: 0};
+		}
 	} else if (control.rotation.y >= 0.4) {
 		mode = "rotl";
 		arrow_rot = {x: 0, y: 0, z: 0};
-		arrow_morph = {straight: 0, left: 1, right: 0};
+		arrow_morph = {straight: 0, left: 1, right: 0, looped: 0};
 	} else if (control.rotation.y <= -0.4) {
 		mode = "rotr";
 		arrow_rot = {x: 0, y: 0, z: 0};
-		arrow_morph = {straight: 0, left: 0, right: 1};
+		arrow_morph = {straight: 0, left: 0, right: 1, looped: 0};
 	} else if (control.rotation.z >= 0.4) {
 		mode = "left";
-		arrow_rot = {x: 0, y: 1.56, z: 0};
-		arrow_morph = {straight: 1, left: 0, right: 0};
+		if(side === "left") { // Straight Arrow Left
+			arrow_rot = {x: 0, y: 1.56, z: 0};
+			arrow_morph = {straight: 1, left: 0, right: 0, looped: 0};
+		} else {			  // looped arrow left
+			arrow_rot = {x: 1.5, y: 0, z: 3};
+			arrow_morph = {straight: 0, left: 0, right: 0, looped: 1};
+		}
 	} else if (control.rotation.z <= -0.4) {
 		mode = "righ";
-		arrow_rot = {x: 0, y: -1.56, z: 0};
-		arrow_morph = {straight: 1, left: 0, right: 0};
+		if(side === "left") { // Straight Arrow Left
+			arrow_rot = {x: 0, y: -1.56, z: 0};
+			arrow_morph = {straight: 1, left: 0, right: 0, looped: 0};
+		} else {			  // Looped Arrow Right
+			arrow_rot = {x: 1.5, y: 0, z: 0};
+			arrow_morph = {straight: 0, left: 0, right: 0, looped: 1};
+		}
 	} else {
 		mode = "still";
 		arrow_rot = {x: 0, y: 0, z: 0};
-		arrow_morph = {straight: 0, left: 0, right: 0};
+		arrow_morph = {straight: 0, left: 0, right: 0, looped: 0};
 	}
 
-	if(mode !== modes[global_mode]) {
-		modes[global_mode] = mode;
-		if(modes['squeezed'] !== '') {
+	if(mode !== modes[side + "_mode"]) {
+		modes[side + "_mode"] = mode;
+		if(modes[mode + "_squeeze"]) {
 			morph_sound.pause();
 			morph_sound.play();
 		}
@@ -386,13 +407,14 @@ function setNewArrowMode(arrow, mode, arrow_rot, arrow_morph) {
 	.start();
 
 	if(arrow.morph_tween) arrow.morph_tween.stop();
-	arrow.morph_tween = new TWEEN.Tween({ straight: arrow.morphTargetInfluences[0], left: arrow.morphTargetInfluences[1], right: arrow.morphTargetInfluences[2]})
+	arrow.morph_tween = new TWEEN.Tween({ straight: arrow.morphTargetInfluences[0], left: arrow.morphTargetInfluences[1], right: arrow.morphTargetInfluences[2], looped: arrow.morphTargetInfluences[3]})
 	.to(arrow_morph, 1000)
 	.onUpdate(function() {
 		//console.log(this);
 		arrow.morphTargetInfluences[0] = this.straight;
 		arrow.morphTargetInfluences[1] = this.left;
 		arrow.morphTargetInfluences[2] = this.right;
+		arrow.morphTargetInfluences[3] = this.looped;
 	})
 	.easing(TWEEN.Easing.Elastic.InOut)
 	.start();
@@ -470,14 +492,14 @@ setInterval(() => {
 //Send movement commands
 var distance_in_cm = 30;
 setInterval(() => {
-	if(modes['squeezed'] !== "") {
-		let local_mode = "";
+	if(modes.left_squeeze) {
+		/*let local_mode = "";
 		if(modes['squeezed'] == "left") local_mode = "left_mode";
-		else if(modes['squeezed'] == "right") local_mode = "right_mode";
+		else if(modes['squeezed'] == "right") local_mode = "right_mode";*/
 
 		//console.log(`sqeezed: ${modes['squeezed']} local_mode: ${local_mode} dir: ${modes[local_mode]}`);
 
-		switch(modes[local_mode]) {
+		switch(modes.left_mode) {
 			case "forw":
 				comms_ws.send(`{"type":"command", "name":"front", "val": "${distance_in_cm}"}`);
 			break;
@@ -498,6 +520,31 @@ setInterval(() => {
 			break;
 		}
 	}
+
+	if(modes.right_squeeze) {
+
+		switch(modes.right_mode) {
+			case "forw":
+				comms_ws.send(`{"type":"command", "name":"down", "val": "${distance_in_cm}"}`);
+			break;
+			case "back":
+				comms_ws.send(`{"type":"command", "name":"up", "val": "${distance_in_cm}"}`);
+			break;
+			case "rotl":
+				comms_ws.send(`{"type":"command", "name":"rotateleft", "val": "${distance_in_cm}"}`);
+			break;
+			case "rotr":
+				comms_ws.send(`{"type":"command", "name":"rotateright", "val": "${distance_in_cm}"}`);
+			break;
+			case "left":
+				comms_ws.send(`{"type":"command", "name":"flipleft", "val": "${distance_in_cm}"}`);
+			break;
+			case "righ":
+				comms_ws.send(`{"type":"command", "name":"flipright", "val": "${distance_in_cm}"}`);
+			break;
+		}
+	}
+
 }, 500);
 
 renderer.setAnimationLoop( function () {
@@ -505,8 +552,10 @@ renderer.setAnimationLoop( function () {
 	if(!supports_vr) controls.update();
 	if ( renderer.xr.isPresenting ) {
 		TWEEN.update();
-		updateControllerInput(controller_left, left_arrow, "left_mode");
-		updateControllerInput(controller_right, right_arrow, "right_mode");
+
+		//Firefox WebXR plugin is seeing reversed left/right controllers... last argument is a quick fix to reverse them for Oculus Quest
+		updateControllerInput(controller_left, left_arrow, "right");
+		updateControllerInput(controller_right, right_arrow, "left");
 		ui.update();
 
 		//If props should be on
