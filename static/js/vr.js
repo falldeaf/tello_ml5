@@ -7,6 +7,7 @@ let yaw = 0;
 let toff = 0;
 let ui, bprogressmaterial, left_arrow, right_arrow;
 let props_on = false;
+let drone_connected = false;
 
 let modes = {left_mode: false, right_mode: false, left_squeeze: "", right_squeeze: ""};
 window.modes = modes;
@@ -225,12 +226,12 @@ batteryprogress.position.z = -2.7;
 scene.add( batteryprogress );
 
 function onSessionStart(){
-	//ui.mesh.position.set( 0, 1, -3 );
-	//scene.add( self.ui.mesh );
+	//Restart the video websocket if it's already been started
+	if(typeof video_ws == WebSocket) startVideoWss();
 }
 
 function onSessionEnd(){
-	//scene.remove( self.ui.mesh );
+
 }
 
 const btn = new VRButton( renderer, { onSessionStart, onSessionEnd } );
@@ -336,7 +337,7 @@ function updateControllerInput(control, arrow, side) {
 	let arrow_rot  = {};
 	let arrow_morph  = {};
 	if(control.rotation.x <= -0.4) { //forward
-		mode = "forw";
+		mode = "forward";
 		if(side === "left") { //Straight Arrow Forward
 			arrow_rot = {x: 0, y: 0, z: 0};
 			arrow_morph = {straight: 1, left: 0, right: 0, looped: 0};
@@ -371,7 +372,7 @@ function updateControllerInput(control, arrow, side) {
 			arrow_morph = {straight: 0, left: 0, right: 0, looped: 1};
 		}
 	} else if (control.rotation.z <= -0.4) {
-		mode = "righ";
+		mode = "right";
 		if(side === "left") { // Straight Arrow Left
 			arrow_rot = {x: 0, y: -1.56, z: 0};
 			arrow_morph = {straight: 1, left: 0, right: 0, looped: 0};
@@ -440,6 +441,9 @@ comms_ws.onmessage = function(event){
 	}
 
 	if(message.pong) {
+		//Listen for video_on and open the video websocket
+		if(message.pong === "video_on") startVideoWss();
+
 		writeLog(message.pong);
 	}
 };
@@ -500,10 +504,12 @@ setInterval(() => {
 		//console.log(`sqeezed: ${modes['squeezed']} local_mode: ${local_mode} dir: ${modes[local_mode]}`);
 
 		switch(modes.left_mode) {
-			case "forw":
+			case "forward":
+				console.log("saw forward");
 				comms_ws.send(`{"type":"command", "name":"front", "val": "${distance_in_cm}"}`);
 			break;
 			case "back":
+				console.log("saw back");
 				comms_ws.send(`{"type":"command", "name":"back", "val": "${distance_in_cm}"}`);
 			break;
 			case "rotl":
@@ -515,7 +521,7 @@ setInterval(() => {
 			case "left":
 				comms_ws.send(`{"type":"command", "name":"left", "val": "${distance_in_cm}"}`);
 			break;
-			case "righ":
+			case "right":
 				comms_ws.send(`{"type":"command", "name":"right", "val": "${distance_in_cm}"}`);
 			break;
 		}
@@ -524,7 +530,7 @@ setInterval(() => {
 	if(modes.right_squeeze) {
 
 		switch(modes.right_mode) {
-			case "forw":
+			case "forward":
 				comms_ws.send(`{"type":"command", "name":"down", "val": "${distance_in_cm}"}`);
 			break;
 			case "back":
@@ -539,7 +545,7 @@ setInterval(() => {
 			case "left":
 				comms_ws.send(`{"type":"command", "name":"flipleft", "val": "${distance_in_cm}"}`);
 			break;
-			case "righ":
+			case "right":
 				comms_ws.send(`{"type":"command", "name":"flipright", "val": "${distance_in_cm}"}`);
 			break;
 		}
@@ -548,14 +554,11 @@ setInterval(() => {
 }, 500);
 
 renderer.setAnimationLoop( function () {
-	//IF xr isn't supported, update the orbitcam
-	if(!supports_vr) controls.update();
 	if ( renderer.xr.isPresenting ) {
+		//Update rendering and animations only when in VR mode
 		TWEEN.update();
-
-		//Firefox WebXR plugin is seeing reversed left/right controllers... last argument is a quick fix to reverse them for Oculus Quest
-		updateControllerInput(controller_left, left_arrow, "right");
-		updateControllerInput(controller_right, right_arrow, "left");
+		updateControllerInput(controller_left, left_arrow, "left");
+		updateControllerInput(controller_right, right_arrow, "right");
 		ui.update();
 
 		//If props should be on

@@ -45,7 +45,8 @@ var jmuxer = new JMuxer({
 var video_ws;
 var socketURL = 'wss://' + window.location.hostname + ':5544';
 
-window.onload = ()=> {
+function startVideoWss() {
+	if(typeof video_ws == WebSocket) video_ws.close();
 	video_ws = new WebSocket(socketURL);
 	video_ws.onopen = function(event){
 		console.log('connected to Video WS');

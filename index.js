@@ -17,6 +17,8 @@ const express = require('express');
 const app = express();
 const port = 8000;
 
+let connected_to_drone = false;
+
 app.get('/video', (req, res) => {
 	res.send('Trying to connect and command');
 	sdk.control.connect()
@@ -50,7 +52,10 @@ app.get('/connect/:post', async (req, res) => {
 	const stateEmitter = await sdk.receiver.state.bind();
 	stateEmitter.on('message', res => comms_wss.broadcast('{"tele":' + JSON.stringify(res) + '}'));
 
-	if(req.params.post === 'video') turnOnVideo();
+	if(req.params.post === 'video') {
+		await turnOnVideo();
+		sendLog("video_on");
+	}
 });
 
 app.get('/disconnect', (req, res) => {
@@ -60,6 +65,7 @@ app.get('/disconnect', (req, res) => {
 			console.log(error);
 		} else {
 			console.log('Disconnected');
+			connected_to_drone = false;
 		}
 	});
 })
@@ -75,9 +81,6 @@ var server = https.createServer(credentials, app)
 server.listen(port, () => {
 	console.log(`App ready at https://localhost:${port}/index.html`)
 });
-
-
-var connected_to_drone = false;
 
 //Video Websocket
 const vserver = https.createServer(credentials);
