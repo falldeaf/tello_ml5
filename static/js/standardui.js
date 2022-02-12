@@ -28,6 +28,9 @@ comms_ws.onmessage = function(event){
 	}
 
 	if(message.pong) {
+		//Listen for video_on and open the video websocket
+		if(message.pong === "video_on") startVideoWss();
+
 		addLog(message.pong);
 	}
 };
